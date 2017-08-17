@@ -46,11 +46,13 @@ use style::computed_values::{transform_style, vertical_align, white_space, word_
 use style::computed_values::content::ContentItem;
 use style::logical_geometry::{Direction, LogicalMargin, LogicalRect, LogicalSize, WritingMode};
 use style::properties::ServoComputedValues;
+use style::properties::longhands::text_emphasis_position::{SpecifiedValue, HorizontalWritingModeValue};
 use style::selector_parser::RestyleDamage;
 use style::servo::restyle_damage::RECONSTRUCT_FLOW;
 use style::str::char_is_whitespace;
 use style::values::{self, Either, Auto};
 use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto};
+use style::computed_values::text_emphasis_style;
 use text;
 use text::TextRunScanner;
 use wrapper::ThreadSafeLayoutNodeHelpers;
@@ -2269,6 +2271,8 @@ impl Fragment {
     /// If `actual_line_metrics` is supplied, then these metrics are used to determine the
     /// displacement of the fragment when `top` or `bottom` `vertical-align` values are
     /// encountered. If this is not supplied, then `top` and `bottom` values are ignored.
+    ///
+    /// Takes text-emphasis into account when calculating height if it's present
     pub fn aligned_inline_metrics(&self,
                                   layout_context: &LayoutContext,
                                   minimum_line_metrics: &LineMetrics,
@@ -2284,6 +2288,16 @@ impl Fragment {
             Some(actual_line_metrics) => actual_line_metrics.space_above_baseline,
         };
         space_above_baseline = space_above_baseline - vertical_alignment_offset;
+
+        // TODO: add 50% of line-height of this fragment if text-emphasis-style is present
+        println!("[SERVO] Text emphasis: {:?}", self.style().get_inheritedtext().text_emphasis_style);
+        if let text_emphasis_style::T::String(ref _string) = self.style().get_inheritedtext().text_emphasis_style {
+            println!("[SERVO] Add to space above baseline");
+            space_above_baseline = space_above_baseline + (space_above_baseline / 2);
+        } else {
+            println!("[SERVO] No emphasis !");
+        }
+
         let space_below_baseline = content_inline_metrics.space_below_baseline +
             vertical_alignment_offset;
         let ascent = content_inline_metrics.ascent - vertical_alignment_offset;

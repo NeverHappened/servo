@@ -4,7 +4,7 @@
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
-<%helpers:shorthand name="text-emphasis" products="gecko"
+<%helpers:shorthand name="text-emphasis"
     sub_properties="text-emphasis-style text-emphasis-color"
     derive_serialize="True"
     spec="https://drafts.csswg.org/css-text-decor-3/#text-emphasis-property">

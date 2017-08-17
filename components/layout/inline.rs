@@ -1420,7 +1420,7 @@ impl Flow for InlineFlow {
     }
 
     /// Calculate and set the block-size of this flow. See CSS 2.1 § 10.6.1.
-    /// Note that we do not need to do in-order traversal becase the children
+    /// Note that we do not need to do in-order traversal because the children
     /// are always block formatting context.
     fn assign_block_size(&mut self, layout_context: &LayoutContext) {
         let _scope = layout_debug_scope!("inline::assign_block_size {:x}",

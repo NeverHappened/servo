@@ -2110,11 +2110,19 @@ impl FragmentDisplayListBuilding for Fragment {
         let container_size = Size2D::zero();
         let metrics = &text_fragment.run.font_metrics;
         let stacking_relative_content_box = stacking_relative_content_box.translate(&offset);
-        let baseline_origin = stacking_relative_content_box.origin +
-            LogicalPoint::new(self.style.writing_mode,
+        let ascent = LogicalPoint::new(self.style.writing_mode,
                               Au(0),
                               metrics.ascent).to_physical(self.style.writing_mode,
                                                           container_size).to_vector();
+        
+        let baseline_origin = stacking_relative_content_box.origin + ascent;
+        // if self.style.text_emphasis {
+        println!("Node style! {:?}", self.style);
+        println!("Node: {:?}", self);
+        println!("Node style func: {:?}", self.style());
+        // }
+            
+        // CAN WE ADD THERE TO THE BASELINE? (baseline_origin)
 
         // Create the text display item.
         let base = state.create_base_display_item(&stacking_relative_content_box,

@@ -2323,6 +2323,7 @@ pub extern "C" fn Servo_DeclarationBlock_SetKeywordValue(declarations:
     let prop = match_wrap_declared! { long,
         MozUserModify => longhands::_moz_user_modify::SpecifiedValue::from_gecko_keyword(value),
         // TextEmphasisPosition => FIXME implement text-emphasis-position
+        // delete this comment?
         Direction => longhands::direction::SpecifiedValue::from_gecko_keyword(value),
         Display => longhands::display::SpecifiedValue::from_gecko_keyword(value),
         Float => longhands::float::SpecifiedValue::from_gecko_keyword(value),

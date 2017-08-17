@@ -417,7 +417,8 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-text-decor-3/#text-shadow-property",
 )}
 
-<%helpers:longhand name="text-emphasis-style" products="gecko" boxed="True"
+
+<%helpers:longhand name="text-emphasis-style"
                    animation_value_type="discrete"
                    spec="https://drafts.csswg.org/css-text-decor/#propdef-text-emphasis-style">
     use computed_values::writing_mode::T as writing_mode;
@@ -607,7 +608,7 @@ ${helpers.predefined_type(
     }
 </%helpers:longhand>
 
-<%helpers:longhand name="text-emphasis-position" animation_value_type="discrete" products="gecko"
+<%helpers:longhand name="text-emphasis-position" animation_value_type="discrete"
                    spec="https://drafts.csswg.org/css-text-decor/#propdef-text-emphasis-position">
     use values::computed::ComputedValueAsSpecified;
     use style_traits::ToCss;
@@ -698,7 +699,7 @@ ${helpers.predefined_type(
 ${helpers.predefined_type("text-emphasis-color", "Color",
                           "computed_value::T::currentcolor()",
                           initial_specified_value="specified::Color::currentcolor()",
-                          products="gecko", animation_value_type="IntermediateColor",
+                          animation_value_type="IntermediateColor",
                           need_clone=True, ignored_when_colors_disabled=True,
                           spec="https://drafts.csswg.org/css-text-decor/#propdef-text-emphasis-color")}
 

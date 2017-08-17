@@ -261,6 +261,14 @@ partial interface CSSStyleDeclaration {
   [SetterThrows, TreatNullAs=EmptyString] attribute DOMString text-decoration;
   [SetterThrows, TreatNullAs=EmptyString] attribute DOMString textDecorationLine;
   [SetterThrows, TreatNullAs=EmptyString] attribute DOMString text-decoration-line;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString text-emphasis;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString textEmphasis;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString text-emphasis-style;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString textEmphasisStyle;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString text-emphasis-color;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString textEmphasisColor;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString text-emphasis-position;
+  [SetterThrows, TreatNullAs=EmptyString] attribute DOMString textEmphasisPosition;
   [SetterThrows, TreatNullAs=EmptyString] attribute DOMString textIndent;
   [SetterThrows, TreatNullAs=EmptyString] attribute DOMString text-indent;
   [SetterThrows, TreatNullAs=EmptyString] attribute DOMString textJustify;
