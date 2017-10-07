@@ -2289,13 +2289,10 @@ impl Fragment {
         };
         space_above_baseline = space_above_baseline - vertical_alignment_offset;
 
-        // TODO: add 50% of line-height of this fragment if text-emphasis-style is present
-        println!("[SERVO] Text emphasis: {:?}", self.style().get_inheritedtext().text_emphasis_style);
+        // NB: 50% of line-height of this fragment if text-emphasis-style is present
         if let text_emphasis_style::T::String(ref _string) = self.style().get_inheritedtext().text_emphasis_style {
             println!("[SERVO] Add to space above baseline");
             space_above_baseline = space_above_baseline + (space_above_baseline / 2);
-        } else {
-            println!("[SERVO] No emphasis !");
         }
 
         let space_below_baseline = content_inline_metrics.space_below_baseline +

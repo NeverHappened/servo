@@ -197,6 +197,8 @@ impl Pipeline {
 
         let url = state.load_data.url.clone();
 
+        println!("Pipeline spawned with URL: {:?}", url);
+
         let script_chan = match state.event_loop {
             Some(script_chan) => {
                 let new_layout_info = NewLayoutInfo {

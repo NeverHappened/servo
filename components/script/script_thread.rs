@@ -553,6 +553,7 @@ impl ScriptThreadFactory for ScriptThread {
 
         let (sender, receiver) = channel();
         let layout_chan = sender.clone();
+        println!("Creating new script thread...");
         thread::Builder::new().name(format!("ScriptThread {:?}", state.id)).spawn(move || {
             thread_state::initialize(thread_state::SCRIPT);
             PipelineNamespace::install(state.pipeline_namespace_id);
@@ -767,6 +768,8 @@ impl ScriptThread {
         let boxed_script_sender = MainThreadScriptChan(chan.clone()).clone();
 
         let (image_cache_channel, image_cache_port) = channel();
+
+
 
         ScriptThread {
             documents: DOMRefCell::new(Documents::new()),

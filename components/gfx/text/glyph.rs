@@ -38,7 +38,7 @@ impl GlyphEntry {
     }
 
     // Creates a GlyphEntry for the common case
-    fn simple(id: GlyphId, advance: Au) -> GlyphEntry {
+    pub fn simple(id: GlyphId, advance: Au) -> GlyphEntry {
         assert!(is_simple_glyph_id(id));
         assert!(is_simple_advance(advance));
 
@@ -109,7 +109,7 @@ pub type DetailedGlyphCount = u16;
 // because GlyphEntry is immutable and only a u32 in size.
 impl GlyphEntry {
     #[inline(always)]
-    fn advance(&self) -> Au {
+    pub fn advance(&self) -> Au {
         Au::new(((self.value & GLYPH_ADVANCE_MASK) >> GLYPH_ADVANCE_SHIFT) as i32)
     }
 
@@ -412,7 +412,7 @@ pub struct GlyphStore {
     /// appear in the input text.
     /// Any changes will also need to be reflected in
     /// transmute_entry_buffer_to_u32_buffer().
-    entry_buffer: Vec<GlyphEntry>,
+    pub entry_buffer: Vec<GlyphEntry>,
     /// A store of the detailed glyph data. Detailed glyphs contained in the
     /// `entry_buffer` point to locations in this data structure.
     detail_store: DetailedGlyphStore,

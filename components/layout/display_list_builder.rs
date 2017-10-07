@@ -13,7 +13,7 @@
 use app_units::{AU_PER_PX, Au};
 use block::{BlockFlow, BlockStackingContextType};
 use canvas_traits::{CanvasData, CanvasMsg, FromLayoutMsg};
-use context::LayoutContext;
+use context::{LayoutContext, with_thread_local_font_context};
 use euclid::{Transform3D, Point2D, Vector2D, Rect, SideOffsets2D, Size2D, TypedSize2D};
 use flex::FlexFlow;
 use flow::{BaseFlow, Flow, IS_ABSOLUTELY_POSITIONED};
@@ -29,6 +29,9 @@ use gfx::display_list::{LineDisplayItem, NormalBorder, OpaqueNode, RadialGradien
 use gfx::display_list::{ScrollRoot, ScrollRootType, SolidColorDisplayItem, StackingContext};
 use gfx::display_list::{StackingContextType, TextDisplayItem, TextOrientation, WebGLDisplayItem};
 use gfx::display_list::WebRenderImageInfo;
+use gfx::text::text_run::TextRun;
+use gfx::text::glyph::GlyphEntry;
+use gfx::font::{ShapingOptions, ShapingFlags, Font};
 use gfx_traits::{combine_id_with_fragment_type, FragmentType, StackingContextId};
 use inline::{FIRST_FRAGMENT_OF_ELEMENT, InlineFlow, LAST_FRAGMENT_OF_ELEMENT};
 use ipc_channel::ipc;
@@ -37,6 +40,7 @@ use model::{self, MaybeAuto};
 use msg::constellation_msg::BrowsingContextId;
 use net_traits::image::base::PixelFormat;
 use net_traits::image_cache::UsePlaceholder;
+use ordered_float::NotNaN;
 use range::Range;
 use script_layout_interface::wrapper_traits::PseudoElementType;
 use servo_config::opts;
@@ -49,9 +53,10 @@ use std::mem;
 use std::sync::Arc;
 use style::computed_values::{background_attachment, background_clip, background_origin};
 use style::computed_values::{background_repeat, border_style, cursor};
-use style::computed_values::{image_rendering, overflow_x, pointer_events, position, visibility};
+use style::computed_values::{image_rendering, overflow_x, pointer_events, position, visibility, text_emphasis_style};
 use style::logical_geometry::{LogicalPoint, LogicalRect, LogicalSize, WritingMode};
 use style::properties::{self, ServoComputedValues};
+use style::font_metrics;
 use style::properties::longhands::border_image_repeat::computed_value::RepeatKeyword;
 use style::properties::style_structs;
 use style::servo::restyle_damage::REPAINT;
@@ -71,6 +76,7 @@ use style::values::specified::position::{X, Y};
 use style_traits::CSSPixel;
 use style_traits::cursor::Cursor;
 use table_cell::CollapsedBordersForCell;
+use unicode_script::{Script};
 use webrender_api::{ClipId, ColorF, ComplexClipRegion, GradientStop, LocalClip, RepeatMode};
 use webrender_api::{ScrollPolicy, TransformStyle};
 use webrender_helpers::{ToBorderRadius, ToMixBlendMode, ToRectF, ToTransformStyle};
@@ -559,6 +565,8 @@ pub trait FragmentDisplayListBuilding {
     fn unique_id(&self, id_type: IdType) -> u64;
 
     fn fragment_type(&self) -> FragmentType;
+
+    fn build_text_run_for_text_emphasis(&self, font: &Font, text_run: Arc<TextRun>, emphasis_char: char) -> Arc<TextRun>;
 }
 
 fn handle_overlapping_radii(size: &Size2D<Au>, radii: &BorderRadii<Au>) -> BorderRadii<Au> {
@@ -2104,6 +2112,14 @@ impl FragmentDisplayListBuilding for Fragment {
             (TextOrientation::Upright, Cursor::Text)
         };
 
+        let (orientation2, cursor2) = if self.style.writing_mode.is_vertical() {
+            // TODO: Distinguish between 'sideways-lr' and 'sideways-rl' writing modes in CSS
+            // Writing Modes Level 4.
+            (TextOrientation::SidewaysRight, Cursor::VerticalText)
+        } else {
+            (TextOrientation::Upright, Cursor::Text)
+        };
+
         // Compute location of the baseline.
         //
         // FIXME(pcwalton): Get the real container size.
@@ -2116,13 +2132,6 @@ impl FragmentDisplayListBuilding for Fragment {
                                                           container_size).to_vector();
         
         let baseline_origin = stacking_relative_content_box.origin + ascent;
-        // if self.style.text_emphasis {
-        println!("Node style! {:?}", self.style);
-        println!("Node: {:?}", self);
-        println!("Node style func: {:?}", self.style());
-        // }
-            
-        // CAN WE ADD THERE TO THE BASELINE? (baseline_origin)
 
         // Create the text display item.
         let base = state.create_base_display_item(&stacking_relative_content_box,
@@ -2133,12 +2142,102 @@ impl FragmentDisplayListBuilding for Fragment {
         state.add_display_item(DisplayItem::Text(box TextDisplayItem {
             base: base,
             text_run: text_fragment.run.clone(),
-            range: text_fragment.range,
+            range: text_fragment.range.clone(),
             text_color: text_color.to_gfx_color(),
             orientation: orientation,
             baseline_origin: baseline_origin,
             blur_radius: shadow_blur_radius,
         }));
+
+        if let text_emphasis_style::T::String(ref string) = self.style().get_inheritedtext().text_emphasis_style {
+            let mut text_emphasis_text_run = text_fragment.run.clone();
+            let base = state.create_base_display_item(&stacking_relative_content_box,
+                                                      LocalClip::from(clip.to_rectf()),
+                                                      self.node,
+                                                      self.style().get_cursor(cursor),
+                                                      DisplayListSection::Content);
+            //            let original_text = .clone();
+            //            let re = Regex::new(r"[^\s-]").unwrap();
+            let mut new_text = "".to_owned();
+            let mut ch = string.chars().next().expect("Text emphasis should have a char inside!");
+            let letter_spacing = self.style().get_inheritedtext().letter_spacing;
+
+            for c in text_emphasis_text_run.text.chars() {
+                if c == ' ' {
+                    new_text.push(' ');
+                } else {
+                    new_text.push(ch);
+                }
+            }
+            let mut new_range = Range::new(
+                text_fragment.range.begin(),
+                text_fragment.range.length()
+            );
+
+            with_thread_local_font_context(state.layout_context, |font_context| {
+                let fontgroup = font_context.layout_font_group_for_style(self.style().clone_font());
+                let mut font = fontgroup.fonts[0].borrow_mut();
+
+                // FIXME(https://github.com/rust-lang/rust/issues/23338)
+                let word_spacing = self.style().get_inheritedtext().word_spacing.value()
+                    .map(|lop| lop.to_hash_key())
+                    .unwrap_or((Au(0), NotNaN::new(0.0).unwrap()));
+                let options = ShapingOptions {
+                    letter_spacing: letter_spacing.value().cloned(), //   / 2,// Option<Au>,
+                    word_spacing: word_spacing,  //    / 2,//(Au, NotNaN<f32>),
+                    script: Script::Common,
+                    flags: ShapingFlags::empty(), //ShapingFlags,
+                };
+                let bidi_level = text_emphasis_text_run.bidi_level;
+
+                println!("New range: {:?}", new_range);
+                println!("New text: {:?}", new_text);
+
+    //            let emphasis_text_run = Arc::new(TextRun {
+    //                text: Arc::new(new_text),
+    //                font_template: text_emphasis_text_run.font_template.clone(),
+    //                actual_pt_size: text_emphasis_text_run.actual_pt_size.clone(),
+    //                font_metrics: text_emphasis_text_run.font_metrics.clone(),
+    //                font_key: text_emphasis_text_run.font_key.clone(),
+    //                glyphs: text_emphasis_text_run.glyphs.clone(),
+    //                bidi_level: text_emphasis_text_run.bidi_level.clone(),
+    //                extra_word_spacing: text_emphasis_text_run.extra_word_spacing.clone()
+    //            });
+
+                // let emphasis_text_run = Arc::new(TextRun::new_for_emphasis(&mut font, new_text, &options, bidi_level));
+
+                let emphasis_item = DisplayItem::Text(box TextDisplayItem {
+                    base: base,
+                    text_run: self.build_text_run_for_text_emphasis(&font, text_emphasis_text_run, ch),
+                    range: new_range,
+                    // TODO: what is this?
+                    text_color: text_color.to_gfx_color(),
+                    // TODO: text_emphasis_color || text_color
+                    orientation: orientation2,
+                    // TODO: what is this?
+                    baseline_origin: stacking_relative_content_box.origin,
+                    // TODO: different place
+                    blur_radius: shadow_blur_radius,
+                    // TODO: need this?
+                });
+
+                println!("Item: {:?}", emphasis_item);
+
+                // text_emphasis_text_run.font_metrics.em_size = text_emphasis_text_run.font_metrics.em_size / 2;
+               state.add_display_item(emphasis_item);
+            });
+        }
+
+        // TODO: extract into method
+        // self.build_display_list_for_text_emphasis(
+        //     base,
+        //     &mut state,
+        //     baseline_origin,
+        //     &text_fragment,
+        //     &text_color,
+        //     &orientation,
+        //     &stacking_relative_content_box,
+        //     &shadow_blur_radius);
 
         // Create display items for text decorations.
         let mut text_decorations = self.style()
@@ -2219,6 +2318,55 @@ impl FragmentDisplayListBuilding for Fragment {
             clip_mode: BoxShadowClipMode::None,
         }));
     }
+
+    fn build_text_run_for_text_emphasis(&self, font: &Font, text_run: Arc<TextRun>, emphasis_char: char) -> Arc<TextRun> {
+        let mut text_run_copy = (*text_run).clone();
+        {
+            let mut glyph_options = Arc::get_mut(&mut text_run_copy.glyphs); 
+            
+            match glyph_options {
+                Some(text_run_glyphs) => {
+                    for glyph_run in text_run_glyphs.iter_mut() {
+                        let mut clone = &mut glyph_run.glyph_store.entry_buffer.clone();
+
+                        let mut new_entry_buffer: Vec<GlyphEntry> = clone.into_iter().map(|mut glyph| {
+                            let glyph_id = font.glyph_index(emphasis_char).expect("Should be a character");
+                            let advance = glyph.advance();
+                            GlyphEntry::simple(glyph_id, advance)
+                        }).collect();
+
+                        let glyph_store_options = Arc::get_mut(&mut glyph_run.glyph_store);
+                        match glyph_store_options {
+                            Some(gsfs) => {
+                                gsfs.entry_buffer = new_entry_buffer;
+                            }
+                            None => {
+                                println!("[TEXTEMPHASIS] Nomatch");
+                            }
+                        }
+                    }
+                }
+                None => {
+                    println!("[TEXTEMPHASIS] Nomatch");
+                }
+            }
+
+        }
+      
+        Arc::new(text_run_copy)
+    }
+
+    // fn build_display_list_for_text_emphasis(&self,
+    //                                         base: &BaseDisplayItem,
+    //                                         state: &mut DisplayListBuildState,
+    //                                         baseline_origin: Point2D<Au>,
+    //                                         text_fragment: &ScannedTextFragmentInfo,
+    //                                         text_color: &RGBA,
+    //                                         orientation: &TextOrientation,
+    //                                         stacking_relative_content_box: &LogicalRect<Au>,
+    //                                         blur_radius: Au,) {
+        
+    // }
 
     fn unique_id(&self, id_type: IdType) -> u64 {
         let fragment_type = self.fragment_type();

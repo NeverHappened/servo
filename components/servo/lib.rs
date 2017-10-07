@@ -121,6 +121,7 @@ pub struct Browser<Window: WindowMethods + 'static> {
     constellation_chan: Sender<ConstellationMsg>,
 }
 
+// LOOK THERE!
 impl<Window> Browser<Window> where Window: WindowMethods + 'static {
     pub fn new(window: Rc<Window>, target_url: ServoUrl) -> Browser<Window> {
         // Global configuration options, parsed from the command line.
@@ -290,6 +291,8 @@ fn create_constellation(user_agent: Cow<'static, str>,
                         webrender_api_sender: webrender_api::RenderApiSender)
                         -> (Sender<ConstellationMsg>, SWManagerSenders) {
     let bluetooth_thread: IpcSender<BluetoothRequest> = BluetoothThreadFactory::new();
+
+    println!("components/servo/lib#create_contellation()");
 
     let (public_resource_threads, private_resource_threads) =
         new_resource_threads(user_agent,

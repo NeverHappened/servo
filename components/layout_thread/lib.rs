@@ -270,6 +270,9 @@ impl LayoutThreadFactory for LayoutThread {
               content_process_shutdown_chan: Option<IpcSender<()>>,
               webrender_api_sender: webrender_api::RenderApiSender,
               layout_threads: usize) {
+
+        println!("Before starting layout thread factory...");
+    
         thread::Builder::new().name(format!("LayoutThread {:?}", id)).spawn(move || {
             thread_state::initialize(thread_state::LAYOUT);
 
@@ -491,6 +494,8 @@ impl LayoutThread {
                                 &outstanding_web_fonts_counter);
         }
 
+        println!("Create LayoutThread");
+
         LayoutThread {
             id: id,
             top_level_browsing_context_id: top_level_browsing_context_id,
@@ -606,6 +611,8 @@ impl LayoutThread {
             FromScript(Msg),
             FromFontCache,
         }
+
+        // println!("Handle request from layout!");
 
         let request = {
             let port_from_script = &self.port;
@@ -1101,6 +1108,9 @@ impl LayoutThread {
             Some(x) => x.as_element().unwrap(),
         };
 
+        // println!("layout: processing reflow request for: {:?} ({}) (query={:?})",
+            //    element, self.url, data.query_type);
+
         debug!("layout: processing reflow request for: {:?} ({}) (query={:?})",
                element, self.url, data.query_type);
         trace!("{:?}", ShowSubtree(element.as_node()));
@@ -1202,6 +1212,7 @@ impl LayoutThread {
                 .collect();
 
         for (el, restyle) in restyles {
+            // println!("Restyle! {:?}", restyle);
             // Propagate the descendant bit up the ancestors. Do this before
             // the restyle calculation so that we can also do it for new
             // unstyled nodes, which the descendants bit helps us find.

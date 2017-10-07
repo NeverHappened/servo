@@ -347,6 +347,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             None => CompositeTarget::Window
         };
 
+        println!("Creating IOCompositor...");
+
         IOCompositor {
             gl: window.gl(),
             window: window,
@@ -456,6 +458,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             }
 
             (Msg::ChangePageTitle(pipeline_id, title), ShutdownState::NotShuttingDown) => {
+                println!("Change page title to {:?}", title);
                 self.change_page_title(pipeline_id, title);
             }
 

@@ -194,7 +194,63 @@ impl<'a> TextRun {
         }
     }
 
+    // pub fn new_for_emphasis(font: &mut Font, text: String, options: &ShapingOptions, bidi_level: bidi::Level) -> TextRun {
+    //     let glyphs = TextRun::break_and_shape_for_emphasis(font, &text, options);
+    //     TextRun {
+    //         text: Arc::new(text),
+    //         font_metrics: font.metrics.clone(),
+    //         font_template: font.handle.template(),
+    //         font_key: font.font_key,
+    //         actual_pt_size: font.actual_pt_size,
+    //         glyphs: Arc::new(glyphs),
+    //         bidi_level: bidi_level,
+    //         extra_word_spacing: Au(0),
+    //     }
+    // }
+
     pub fn break_and_shape(font: &mut Font, text: &str, options: &ShapingOptions)
+                           -> Vec<GlyphRun> {
+        let mut glyphs = vec!();
+        let mut slice = 0..0;
+
+        for (idx, _is_hard_break) in LineBreakIterator::new(text) {
+            // Extend the slice to the next UAX#14 line break opportunity.
+            slice.end = idx;
+            let word = &text[slice.clone()];
+
+            // Split off any trailing whitespace into a separate glyph run.
+            let mut whitespace = slice.end..slice.end;
+            if let Some((i, _)) = word.char_indices().rev()
+                .take_while(|&(_, c)| char_is_whitespace(c)).last() {
+                    whitespace.start = slice.start + i;
+                    slice.end = whitespace.start;
+                } else if idx != text.len() && options.flags.contains(KEEP_ALL_FLAG) {
+                    // If there's no whitespace and word-break is set to
+                    // keep-all, try increasing the slice.
+                    continue;
+                }
+            if slice.len() > 0 {
+                glyphs.push(GlyphRun {
+                    glyph_store: font.shape_text(&text[slice.clone()], options),
+                    range: Range::new(ByteIndex(slice.start as isize),
+                                      ByteIndex(slice.len() as isize)),
+                });
+            }
+            if whitespace.len() > 0 {
+                let mut options = options.clone();
+                options.flags.insert(IS_WHITESPACE_SHAPING_FLAG);
+                glyphs.push(GlyphRun {
+                    glyph_store: font.shape_text(&text[whitespace.clone()], &options),
+                    range: Range::new(ByteIndex(whitespace.start as isize),
+                                      ByteIndex(whitespace.len() as isize)),
+                });
+            }
+            slice.start = whitespace.end;
+        }
+        glyphs
+    }
+
+    pub fn break_and_shape_for_emphasis(font: &mut Font, text: &str, original_text: &str, options: &ShapingOptions)
                            -> Vec<GlyphRun> {
         let mut glyphs = vec!();
         let mut slice = 0..0;

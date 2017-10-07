@@ -808,6 +808,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     /// Handles loading pages, navigation, and granting access to the compositor
     #[allow(unsafe_code)]
     fn handle_request(&mut self) {
+
         enum Request {
             Script(FromScriptMsg),
             Compositor(FromCompositorMsg),
@@ -815,6 +816,16 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             NetworkListener((PipelineId, FetchResponseMsg)),
             FromSWManager(SWManagerMsg),
         }
+
+        // impl Debug for Request {
+            // fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                // match *self {
+                    // Request::Script(ref m) => write!(f, "Script"),
+                    // Request::Compositor(ref m) => write!(f, "Compositor"),
+                    // _ => write!(f, "Kek")
+                // }
+            // }
+        // }
 
         // Get one incoming request.
         // This is one of the few places where the compositor is
@@ -945,6 +956,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             // This should only be called once per constellation, and only by the browser
             FromCompositorMsg::InitLoadUrl(url) => {
                 debug!("constellation got init load URL message");
+                println!("Init load: {:?}", url);
                 self.handle_init_load(url);
             }
             // Handle a forward or back request
@@ -1570,7 +1582,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         } else {
             None
         };
-
+        println!("new_pipeline via IFRAME");
         // Create the new pipeline, attached to the parent and push to pending changes
         self.new_pipeline(load_info.info.new_pipeline_id,
                           load_info.info.browsing_context_id,
@@ -1718,6 +1730,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         // Allow the embedder to handle the url itself
         let (chan, port) = ipc::channel().expect("Failed to create IPC channel!");
         self.compositor_proxy.send(ToCompositorMsg::AllowNavigation(load_data.url.clone(), chan));
+        println!("Load URL::: {:?} pipeline id: {:?}", load_data, source_id);
         if let Ok(false) = port.recv() {
             return None;
         }
@@ -2337,6 +2350,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
 
     fn change_session_history(&mut self, change: SessionHistoryChange) {
         debug!("Setting browsing context {} to be pipeline {}.", change.browsing_context_id, change.new_pipeline_id);
+        println!("Change session history: {:?}", change.load_data);
 
         // If the currently focused pipeline is the one being changed (or a child
         // of the pipeline being changed) then update the focus pipeline to be
