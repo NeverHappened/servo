@@ -20,7 +20,7 @@ use js::jsapi::{JS_ReadUint32Pair, JS_WriteUint32Pair};
 use js::jsapi::{JS_STRUCTURED_CLONE_VERSION, JS_WriteStructuredClone};
 use js::jsapi::{MutableHandleObject, TransferableOwnership};
 use js::jsapi::{JS_NewArrayObject1, JS_DefineElement};
-use js::jsval::{ObjectValue, UndefinedValue};
+use js::jsval::{UndefinedValue};
 use libc::size_t;
 use std::os::raw;
 use std::ptr;
@@ -226,10 +226,9 @@ impl StructuredCloneData {
                             transfer: Vec<HandleValue>) -> Fallible<StructuredCloneData> {
         let mut data = ptr::null_mut();
         let mut nbytes = 0;
-        let mut transfer_value;
-        unsafe {
-            transfer_value = Self::create_js_value_from_sequence(cx, transfer);
-        }
+        let transfer_value = unsafe {
+            Self::create_js_value_from_sequence(cx, transfer)
+        };
         let result = unsafe {
             JS_WriteStructuredClone(cx,
                                     message,
@@ -248,35 +247,21 @@ impl StructuredCloneData {
         Ok(StructuredCloneData::Struct(data, nbytes))
     }
 
-
-            // tmp code
-            // pub fn JS_NewArrayObject1(cx: *mut JSContext,
-                            //  length:  usize
-
-            // pub fn JS_DefineElement(cx: *mut JSContext, obj: HandleObject, index: u32,
-            // value: HandleValue, attrs: ::std::os::raw::c_uint,
-            // getter: JSNative, setter: JSNative) -> bool;
-
-            // pub fn JS_NewObject(cx: *mut JSContext, clasp: *const JSClass)
-            //  -> *mut JSObject;
-
-            // see paint_worklet_global_scope:274 rooted!
-
     // Create js object from vector of objects
     pub unsafe fn create_js_value_from_sequence(cx: *mut JSContext, values: Vec<HandleValue>) -> HandleValue {
-        // let mut array_object = JS_NewArrayObject1(cx, values.len());
-        // rooted!(in(cx) let js_object = JS_NewPlainObject(cx));
-
         rooted!(in(cx) let array_rooted_object = JS_NewArrayObject1(cx, values.len()));
         rooted!(in(cx) let mut result_value = UndefinedValue());
 
         let array_object = array_rooted_object.handle();
 
         for (index, value) in values.into_iter().enumerate() {
-            let is_define_successful: bool = JS_DefineElement(cx, array_object, index as u32, value, 0, None, None);
+            // TODO: what if not successful?
+            let _is_define_successful: bool = JS_DefineElement(cx, array_object, index as u32, value, 0, None, None);
+            // if !is_define_successful {
+            // }
         }
 
-        let mut result = result_value.handle_mut();
+        let result = result_value.handle_mut();
         array_object.to_jsval(cx, result);
 
         result.handle()
