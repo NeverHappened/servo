@@ -402,8 +402,13 @@ unsafe extern "C" fn interrupt_callback(cx: *mut JSContext) -> bool {
 impl DedicatedWorkerGlobalScopeMethods for DedicatedWorkerGlobalScope {
     #[allow(unsafe_code)]
     // https://html.spec.whatwg.org/multipage/#dom-dedicatedworkerglobalscope-postmessage
-    unsafe fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
-        let data = StructuredCloneData::write(cx, message)?;
+    unsafe fn PostMessage(&self, cx: *mut JSContext, message: HandleValue, transfer: Option<Vec<HandleValue>>) -> ErrorResult {
+        println!("DedicatedWorkerGlobalScope:PostMessage()");
+        println!("Transfer: {:?}", transfer);
+        let data = match transfer {
+            Some(transfer) => StructuredCloneData::write_transfered(cx, message, transfer)?,
+            None => StructuredCloneData::write(cx, message)?,
+        };
         let worker = self.worker.borrow().as_ref().unwrap().clone();
         let pipeline_id = self.upcast::<GlobalScope>().pipeline_id();
         let task = Box::new(task!(post_worker_message: move || {

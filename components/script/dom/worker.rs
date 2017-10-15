@@ -143,8 +143,11 @@ impl Worker {
 impl WorkerMethods for Worker {
     #[allow(unsafe_code)]
     // https://html.spec.whatwg.org/multipage/#dom-worker-postmessage
-    unsafe fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
-        let data = StructuredCloneData::write(cx, message)?;
+    unsafe fn PostMessage(&self, cx: *mut JSContext, message: HandleValue, transfer: Option<Vec<HandleValue>>) -> ErrorResult {
+        let data = match transfer {
+            Some(transfer) => StructuredCloneData::write_transfered(cx, message, transfer)?,
+            None => StructuredCloneData::write(cx, message)?,
+        };
         let address = Trusted::new(self);
 
         // NOTE: step 9 of https://html.spec.whatwg.org/multipage/#dom-messageport-postmessage
