@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+typedef any Transferable;
+
 // https://html.spec.whatwg.org/multipage/#window
 [PrimaryGlobal]
 /*sealed*/ interface Window : GlobalScope {
@@ -64,9 +66,10 @@
   unsigned long requestAnimationFrame(FrameRequestCallback callback);
   void cancelAnimationFrame(unsigned long handle);
 
-  //void postMessage(any message, DOMString targetOrigin, optional sequence<Transferable> transfer);
   [Throws]
-  void postMessage(any message, DOMString targetOrigin);
+  void postMessage(any message, DOMString targetOrigin, optional sequence<Transferable> transfer);
+
+  /*void postMessage(any message, DOMString targetOrigin);*/
 
   // also has obsolete members
 };

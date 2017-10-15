@@ -14,7 +14,7 @@ use dom::bindings::codegen::Bindings::FunctionBinding::Function;
 use dom::bindings::codegen::Bindings::PermissionStatusBinding::PermissionState;
 use dom::bindings::codegen::Bindings::RequestBinding::RequestInit;
 use dom::bindings::codegen::Bindings::WindowBinding::{self, FrameRequestCallback, WindowMethods};
-use dom::bindings::codegen::Bindings::WindowBinding::{ScrollBehavior, ScrollToOptions};
+use dom::bindings::codegen::Bindings::WindowBinding::{ScrollBehavior, ScrollToOptions, Transferable};
 use dom::bindings::codegen::UnionTypes::RequestOrUSVString;
 use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::inheritance::Castable;
@@ -754,7 +754,9 @@ impl WindowMethods for Window {
     unsafe fn PostMessage(&self,
                    cx: *mut JSContext,
                    message: HandleValue,
-                   origin: DOMString)
+                   origin: DOMString,
+                   transfer: Option<Vec<HandleValue>>
+               )
                    -> ErrorResult {
         // Step 3-5.
         let origin = match &origin[..] {
@@ -772,7 +774,14 @@ impl WindowMethods for Window {
 
         // Step 1-2, 6-8.
         // TODO(#12717): Should implement the `transfer` argument.
-        let data = StructuredCloneData::write(cx, message)?;
+        // let data = match transfer {
+        //     Some(transfer) => StructuredCloneData::write_transfered(cx, message, transfer)?,
+        //     None => StructuredCloneData::write(cx, message)?,
+        // };
+
+        let data =  StructuredCloneData::write(cx, message)?;
+
+
 
         // Step 9.
         self.post_message(origin, data);
