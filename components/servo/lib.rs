@@ -939,6 +939,7 @@ fn create_constellation(
         opts.enable_canvas_antialiasing,
         canvas_chan,
         ipc_canvas_chan,
+        opts.bubble_inline_sizes_separately,
     );
 
     if let Some(webvr_constellation_sender) = webvr_constellation_sender {

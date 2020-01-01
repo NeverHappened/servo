@@ -89,6 +89,12 @@ pub struct LayoutContext<'a> {
     /// A list of nodes that have just initiated a CSS transition.
     /// A None value means that this layout was not initiated by the script thread.
     pub newly_transitioning_nodes: Option<Mutex<Vec<UntrustedNodeAddress>>>,
+
+    pub bubble_inline_sizes_separately: bool,
+
+    pub nonincremental_layout: bool,
+
+    pub show_debug_fragment_borders: bool,
 }
 
 impl<'a> Drop for LayoutContext<'a> {

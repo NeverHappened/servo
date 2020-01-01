@@ -156,6 +156,8 @@ pub struct Fragment {
     /// `established_reference_frame` assigned, it will use the `clipping_and_scrolling` of the
     /// parent block.
     pub established_reference_frame: Option<ClipScrollNodeIndex>,
+
+    pub show_debug_fragment_borders: bool,
 }
 
 impl Serialize for Fragment {
@@ -690,6 +692,7 @@ impl Fragment {
             debug_id: DebugId::new(),
             stacking_context_id: StackingContextId::root(),
             established_reference_frame: None,
+            show_debug_fragment_borders: ctx.show_debug_fragment_borders,
         }
     }
 
@@ -701,6 +704,7 @@ impl Fragment {
         selected_style: ServoArc<ComputedValues>,
         mut restyle_damage: RestyleDamage,
         specific: SpecificFragmentInfo,
+        show_debug_fragment_borders: bool,
     ) -> Fragment {
         let writing_mode = style.writing_mode;
 
@@ -721,6 +725,7 @@ impl Fragment {
             debug_id: DebugId::new(),
             stacking_context_id: StackingContextId::root(),
             established_reference_frame: None,
+            show_debug_fragment_borders: show_debug_fragment_borders,
         }
     }
 
@@ -748,6 +753,7 @@ impl Fragment {
             debug_id: DebugId::new(),
             stacking_context_id: StackingContextId::root(),
             established_reference_frame: None,
+            show_debug_fragment_borders: self.show_debug_fragment_borders,
         }
     }
 
@@ -775,6 +781,7 @@ impl Fragment {
             debug_id: self.debug_id.clone(),
             stacking_context_id: StackingContextId::root(),
             established_reference_frame: None,
+            show_debug_fragment_borders: self.show_debug_fragment_borders,
         }
     }
 

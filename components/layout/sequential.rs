@@ -16,7 +16,6 @@ use crate::traversal::{AssignBSizes, AssignISizes, BubbleISizes, BuildDisplayLis
 use crate::traversal::{InorderFlowTraversal, PostorderFlowTraversal, PreorderFlowTraversal};
 use app_units::Au;
 use euclid::default::{Point2D, Rect, Size2D, Vector2D};
-use servo_config::opts;
 use style::servo::restyle_damage::ServoRestyleDamage;
 use webrender_api::units::LayoutPoint;
 
@@ -53,7 +52,7 @@ pub fn reflow(root: &mut dyn Flow, layout_context: &LayoutContext, relayout_mode
         }
     }
 
-    if opts::get().bubble_inline_sizes_separately {
+    if layout_context.bubble_inline_sizes_separately {
         let bubble_inline_sizes = BubbleISizes {
             layout_context: &layout_context,
         };

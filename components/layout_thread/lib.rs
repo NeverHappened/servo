@@ -279,6 +279,12 @@ pub struct LayoutThread {
 
     /// Dumps the flow tree after a layout.
     dump_flow_tree: bool,
+
+    /// True if need to bubble inline sizes separately
+    bubble_inline_sizes_separately: bool,
+
+    /// True if we should show borders on all fragments for debugging purposes
+    show_debug_fragment_borders: bool,
 }
 
 impl LayoutThreadFactory for LayoutThread {
@@ -313,6 +319,8 @@ impl LayoutThreadFactory for LayoutThread {
         nonincremental_layout: bool,
         trace_layout: bool,
         dump_flow_tree: bool,
+        bubble_inline_sizes_separately: bool,
+        show_debug_fragment_borders: bool,
     ) {
         thread::Builder::new()
             .name(format!("LayoutThread {:?}", id))
@@ -362,6 +370,8 @@ impl LayoutThreadFactory for LayoutThread {
                         nonincremental_layout,
                         trace_layout,
                         dump_flow_tree,
+                        bubble_inline_sizes_separately,
+                        show_debug_fragment_borders,
                     );
 
                     let reporter_name = format!("layout-reporter-{}", id);
@@ -532,6 +542,8 @@ impl LayoutThread {
         nonincremental_layout: bool,
         trace_layout: bool,
         dump_flow_tree: bool,
+        bubble_inline_sizes_separately: bool,
+        show_debug_fragment_borders: bool,
     ) -> LayoutThread {
         // Let webrender know about this pipeline by sending an empty display list.
         webrender_api.send_initial_transaction(webrender_document, id.to_webrender());
@@ -623,6 +635,8 @@ impl LayoutThread {
             nonincremental_layout,
             trace_layout,
             dump_flow_tree,
+            bubble_inline_sizes_separately,
+            show_debug_fragment_borders,
         }
     }
 
@@ -680,6 +694,9 @@ impl LayoutThread {
                 None
             },
             registered_painters: &self.registered_painters,
+            bubble_inline_sizes_separately: self.bubble_inline_sizes_separately,
+            nonincremental_layout: self.nonincremental_layout,
+            show_debug_fragment_borders: self.show_debug_fragment_borders,
         }
     }
 
@@ -958,6 +975,8 @@ impl LayoutThread {
             self.nonincremental_layout,
             self.trace_layout,
             self.dump_flow_tree,
+            self.bubble_inline_sizes_separately,
+            self.show_debug_fragment_borders,
         );
     }
 
@@ -1081,6 +1100,7 @@ impl LayoutThread {
         profiler_metadata: Option<TimerMetadata>,
         time_profiler_chan: profile_time::ProfilerChan,
         layout_context: &LayoutContext,
+        bubble_inline_sizes_separately: bool,
     ) {
         let _scope = layout_debug_scope!("solve_constraints_parallel");
 
@@ -1092,6 +1112,7 @@ impl LayoutThread {
             time_profiler_chan,
             layout_context,
             traversal,
+            bubble_inline_sizes_separately,
         );
     }
 
@@ -1884,6 +1905,7 @@ impl LayoutThread {
                             profiler_metadata,
                             self.time_profiler_chan.clone(),
                             &*context,
+                            self.bubble_inline_sizes_separately,
                         );
                     } else {
                         //Sequential mode

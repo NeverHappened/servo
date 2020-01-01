@@ -204,6 +204,9 @@ pub struct InitialPipelineState {
 
     /// Mechanism to force the compositor to process events.
     pub event_loop_waker: Option<Box<dyn EventLoopWaker>>,
+
+    /// TODO
+    pub bubble_inline_sizes_separately: bool,
 }
 
 pub struct NewPipeline {
@@ -622,6 +625,8 @@ impl UnprivilegedPipelineContent {
             self.opts.nonincremental_layout,
             self.opts.trace_layout,
             self.opts.dump_flow_tree,
+            self.opts.bubble_inline_sizes_separately,
+            self.opts.show_debug_fragment_borders,
         );
 
         if wait_for_completion {

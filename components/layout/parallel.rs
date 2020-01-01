@@ -15,7 +15,6 @@ use crate::flow_ref::FlowRef;
 use crate::traversal::{AssignBSizes, AssignISizes, BubbleISizes};
 use crate::traversal::{PostorderFlowTraversal, PreorderFlowTraversal};
 use profile_traits::time::{self, profile, TimerMetadata};
-use servo_config::opts;
 use smallvec::SmallVec;
 use std::mem;
 use std::ptr;
@@ -195,8 +194,9 @@ pub fn reflow(
     time_profiler_chan: time::ProfilerChan,
     context: &LayoutContext,
     queue: &rayon::ThreadPool,
+    bubble_inline_sizes_separately: bool,
 ) {
-    if opts::get().bubble_inline_sizes_separately {
+    if bubble_inline_sizes_separately {
         let bubble_inline_sizes = BubbleISizes {
             layout_context: &context,
         };

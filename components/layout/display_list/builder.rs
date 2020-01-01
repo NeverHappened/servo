@@ -45,7 +45,6 @@ use msg::constellation_msg::PipelineId;
 use net_traits::image_cache::UsePlaceholder;
 use range::Range;
 use script_traits::IFrameSize;
-use servo_config::opts;
 use servo_geometry::{self, MaxRect};
 use std::default::Default;
 use std::f32;
@@ -1703,7 +1702,7 @@ impl Fragment {
             );
         });
 
-        if opts::get().show_debug_fragment_borders {
+        if self.show_debug_fragment_borders {
             self.build_debug_borders_around_fragment(state, stacking_relative_border_box, clip)
         }
     }
@@ -1752,7 +1751,7 @@ impl Fragment {
                     clip,
                 );
 
-                if opts::get().show_debug_fragment_borders {
+                if self.show_debug_fragment_borders {
                     self.build_debug_borders_around_text_fragments(
                         state,
                         self.style(),
@@ -1773,7 +1772,7 @@ impl Fragment {
                     clip,
                 );
 
-                if opts::get().show_debug_fragment_borders {
+                if self.show_debug_fragment_borders {
                     self.build_debug_borders_around_text_fragments(
                         state,
                         self.style(),
@@ -1797,7 +1796,7 @@ impl Fragment {
             SpecificFragmentInfo::InlineAbsolute(_) |
             SpecificFragmentInfo::TruncatedFragment(_) |
             SpecificFragmentInfo::Svg(_) => {
-                if opts::get().show_debug_fragment_borders {
+                if self.show_debug_fragment_borders {
                     self.build_debug_borders_around_fragment(
                         state,
                         stacking_relative_border_box,
@@ -2852,7 +2851,7 @@ impl BaseFlow {
         state: &mut DisplayListBuildState,
         node: OpaqueNode,
     ) {
-        if !opts::get().show_debug_parallel_layout {
+        if !state.layout_context.show_debug_fragment_borders {
             return;
         }
 

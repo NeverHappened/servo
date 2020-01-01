@@ -77,7 +77,7 @@
 //! * Blocking is transitive (if T1 can block on T2 and T2 can block on T3 then T1 can block on T3)
 //! * Nothing can block on itself!
 //!
-//! There is a complexity intoduced by IPC channels, since they do not support
+//! There is a complexity introduced by IPC channels, since they do not support
 //! non-blocking send. This means that as well as `receiver.recv()` blocking,
 //! `sender.send(data)` can also block when the IPC buffer is full. For this reason it is
 //! very important that all IPC receivers where we depend on non-blocking send
@@ -498,6 +498,8 @@ pub struct Constellation<Message, LTF, STF> {
 
     /// Pipeline ID of the active media session.
     active_media_session: Option<PipelineId>,
+
+    bubble_inline_sizes_separately: bool,
 }
 
 /// State needed to construct a constellation.
@@ -829,6 +831,7 @@ where
         enable_canvas_antialiasing: bool,
         canvas_chan: Sender<ConstellationCanvasMsg>,
         ipc_canvas_chan: IpcSender<CanvasMsg>,
+        bubble_inline_sizes_separately: bool,
     ) -> (Sender<FromCompositorMsg>, IpcSender<SWManagerMsg>) {
         let (compositor_sender, compositor_receiver) = unbounded();
 
@@ -1016,6 +1019,7 @@ where
                     player_context: state.player_context,
                     event_loop_waker: state.event_loop_waker,
                     active_media_session: None,
+                    bubble_inline_sizes_separately: bubble_inline_sizes_separately,
                 };
 
                 constellation.run();
@@ -1263,6 +1267,7 @@ where
             webxr_registry: self.webxr_registry.clone(),
             player_context: self.player_context.clone(),
             event_loop_waker: self.event_loop_waker.as_ref().map(|w| (*w).clone_box()),
+            bubble_inline_sizes_separately: self.bubble_inline_sizes_separately,
         });
 
         let pipeline = match result {

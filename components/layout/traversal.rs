@@ -11,7 +11,6 @@ use crate::flow::{Flow, FlowFlags, GetBaseFlow, ImmutableFlowUtils};
 use crate::wrapper::ThreadSafeLayoutNodeHelpers;
 use crate::wrapper::{GetRawData, LayoutNodeLayoutData};
 use script_layout_interface::wrapper_traits::{LayoutNode, ThreadSafeLayoutNode};
-use servo_config::opts;
 use style::context::{SharedStyleContext, StyleContext};
 use style::data::ElementData;
 use style::dom::{NodeInfo, TElement, TNode};
@@ -194,7 +193,7 @@ where
         let tnode = node.to_threadsafe();
 
         // Always reconstruct if incremental layout is turned off.
-        let nonincremental_layout = opts::get().nonincremental_layout;
+        let nonincremental_layout = context.nonincremental_layout;
         if nonincremental_layout ||
             tnode.restyle_damage() != RestyleDamage::empty() ||
             node.as_element()

@@ -491,6 +491,7 @@ fn render_text(
         style,
         RestyleDamage::rebuild_and_reflow(),
         info,
+        layout_context.show_debug_fragment_borders,
     ));
     // FIXME(pcwalton): This should properly handle multiple marker fragments. This could happen
     // due to text run splitting.

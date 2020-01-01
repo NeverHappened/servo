@@ -57,5 +57,7 @@ pub trait LayoutThreadFactory {
         nonincremental_layout: bool,
         trace_layout: bool,
         dump_flow_tree: bool,
+        bubble_inline_sizes_separately: bool,
+        show_debug_fragment_borders: bool,
     );
 }
